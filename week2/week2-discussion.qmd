@@ -1,0 +1,20 @@
+---
+title: "week2-discussion"
+author: "Henry Oliver"
+format: html
+---
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
