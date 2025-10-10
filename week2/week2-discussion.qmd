@@ -89,7 +89,22 @@ Make a map :(
 
 ```{r}
 # Boolean 
-st_crs(col) == st_crs(roads)
+st_crs(ecoregions) == st_crs(roads)
 
+```
+
+```{r}
+joe <- st_transform(birds_df_purrr_3, crs = st_crs(ecoregions))
+```
+
+
+```{r}
+tm_shape(ecoregions) +
+  tm_polygons() +
+  tm_shape(roads) +
+  tm_lines() +
+  tm_shape(birds_df_purrr_3) +
+  tm_dots() +
+  tm_title("Uoohh Oh bOooy what;s going on")
 ```
 
