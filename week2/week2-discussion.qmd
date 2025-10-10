@@ -5,16 +5,91 @@ format: html
 ---
 
 ```{r}
-
+library(tidyverse)
+library(sf)
+library(tmap)
 ```
 
 
 ```{r}
+# Read in data
+birds <- read_csv(here::here('week2', 'data', 'dataves.csv')) %>% 
+  as_tibble() %>% 
+  rename(long = decimal_longitude, lat = decimal_latitude) %>% 
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
 
+ecoregions <- st_read(here::here('week2', 'data', 'Colombia/'))
+
+roads <- st_read(here::here('week2', 'data', 'RDLINE_colombia'))
+
+```
+
+## Step 2
+```{r}
+print(class(birds))
+print(class(ecoregions))
+print(class(roads))
+
+# View geometry type of each object
+unique(st_geometry_type(ecoregions))
+unique(st_geometry_type(roads))
+unique(st_geometry_type(birds))
+```
+
+## Step 3
+```{r}
+plot <- ecoregions %>% 
+  filter(N1_MacroBi == "Amazonian")
+
+tm_shape(plot)+
+  tm_polygons()
+```
+
+
+## Step 4 Play with CRS
+```{r}
+# Check the CRS
+st_crs(roads)
+st_crs(ecoregions)
+st_crs(birds)
+
+# View units of each object CRS
+st_crs(roads)$units
+st_crs(ecoregions)$units
+st_crs(birds)$units
+
+```
+
+Use `map()` to unlist/extract
+```{r}
+birds_df_purrr <- birds %>% 
+  # Extract lat & long from geometry column
+  mutate(lon = unlist(purrr::map(birds$geometry, 1)),
+         lat = unlist(purrr::map(birds$geometry, 2))) %>% 
+  st_drop_geometry() # Remove geometry column now that it's redundant
+```
+
+Use `st_coordinates()` to extract/assign 
+```{r}
+
+birds_df_purrr_2 <- birds %>% 
+  dplyr::mutate(lon = st_coordinates(.)[,1], #Assign first matrix item to "lon"
+                lat = st_coordinates(.)[,2]) %>% 
+  st_drop_geometry()
 ```
 
 
 ```{r}
+birds_df_purrr_3 <- birds %>% 
+  st_as_sf(coords = c("lon", "lat"), crs = 4326)
+```
+
+
+Make a map :(
+
+```{r}
+# Boolean 
+st_crs(col) == st_crs(roads)
 
 ```
 
