@@ -1,0 +1,116 @@
+---
+title: "week4_discussion"
+format: html
+---
+
+```{r}
+
+library(tidyverse)
+library(spData)
+library(spDataLarge)
+library(sf)
+library(stars)
+library(terra)
+```
+
+
+
+```{r}
+dem <- terra::rast(system.file("raster/dem.tif", package = "spDataLarge"))
+landsat <- terra::rast(system.file("raster/landsat.tif", package = "spDataLarge"))
+srtm <- terra::rast(system.file("raster/srtm.tif", package = "spDataLarge"))
+```
+
+
+
+```{r}
+hist(dem,
+     main = "Digital Elevation Model Distribution",
+     xlab = "Value")
+
+```
+
+
+```{r}
+boxplot(dem,
+     main = "Digital Elevation Model Distribution",
+     xlab = "Value")
+```
+Reclassify dem and compute the mean for the three classes:
+  Low, where elevation is less than 300
+  Medium
+  High, where elevation is greater than 500
+
+```{r}
+# create a reclassification matrix
+dem_0 <- matrix(c(-Inf, 300, 0, #group 1 ranges from  0-300
+                  300, 500, 1, #group 2 ranges from 300-500
+                500, Inf, 2 #group 3 ranges from 500-2000
+              ),
+             ncol = 3, byrow = TRUE)
+
+dem_reclassified <- classify(dem, rcl = dem_0)
+
+# Assign labels to the numerical categories
+tbl <- tibble::tibble(id = 0:2, #tibble is like a table
+                      cats = c("low", "medium", "high"))
+
+# Assign the levels from 'tbl' into dem_reclassified
+levels(dem_reclassified) <- tbl
+
+# Calculate mean elevation for each category using original DEM values
+# Zonal algebra, each zone is an elevation classification
+elevation_mean <- terra::zonal(dem, dem_reclassified, fun = "mean")
+elevation_mean
+
+summary(dem_reclassified)
+```
+
+
+```{r}
+# Create function to change landsat data from large number format. Correct for offset
+scale_factor <- 0.0001
+offset <- 0
+
+scale_function <- function(x) {
+  x * scale_factor + offset
+}
+
+# Apply function to raster
+landsat_scaled <- terra::app(landsat, fun = scale_function)
+```
+
+
+1	blue	30 meter
+2	green	30 meter
+3	red	30 meter
+4	near-infrared	30 meter
+
+```{r}
+
+ndwi_fun <- function(green, nir){
+    (green - nir)/(green + nir)
+}
+
+ndvi_fun <- function(nir, red){
+  (nir - red)/(nir + red)
+}
+```
+
+
+```{r}
+# Apply NDWI function to scaled raster
+                                        # Band No.s
+ndwi_rast <- terra::lapp(landsat_scaled[[c(2, 4)]],
+                         fun = ndwi_fun)
+
+ndvi_rast <- terra::lapp(landsat_scaled[[c(4, 3)]],
+                         fun = ndvi_fun)
+```
+
+
+```{r}
+plot(ndwi_rast,
+     main = "Zion National Park NDWI")
+```
+
